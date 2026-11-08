@@ -386,7 +386,4 @@ class DocumentConverterWindow(QWidget):
         if hasattr(self, "parent_navigator") and self.parent_navigator:
             self.parent_navigator.go_home()
         else:
-            from apps.document_converter.ui.index import DocumentLauncherWindow
-            self.index_window = DocumentLauncherWindow()
-            self.index_window.show()
             self.close()

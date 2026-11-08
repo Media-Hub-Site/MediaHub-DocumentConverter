@@ -125,12 +125,6 @@ class DocumentLauncherWindow(QWidget):
         real_exit_btn.setStyleSheet(get_soft_button_style())
         footer.addWidget(real_exit_btn)
         
-        exit_btn = QPushButton("← Volver al Hub")
-        exit_btn.setFixedWidth(160)
-        exit_btn.clicked.connect(self.go_to_hub)
-        exit_btn.setStyleSheet(get_soft_button_style())
-        footer.addWidget(exit_btn)
-        
         footer.addStretch()
 
         layout.addLayout(footer)
@@ -169,11 +163,6 @@ class DocumentLauncherWindow(QWidget):
         else:
             QMessageBox.information(self, "Error", "Acción no reconocida.")
 
-    def go_to_hub(self):
-        from core.ui.hub_window import HubWindow
-        self.hub_window = HubWindow()
-        self.hub_window.show()
-        self.close()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
