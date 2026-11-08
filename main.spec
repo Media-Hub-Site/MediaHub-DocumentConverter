@@ -10,6 +10,7 @@ hidden_imports = [
     'PyQt6.QtCore',
     'PyQt6.QtGui',
     'PyQt6.QtWidgets',
+    'PyQt6.QtPrintSupport',
     'pdf2docx',
     'docx2pdf',
     'comtypes',
@@ -18,6 +19,10 @@ hidden_imports = [
     'win32com.client',
     'fitz',
     'img2pdf',
+    'pptx',
+    'pdfplumber',
+    'docx',
+    'PIL',
 ]
 hidden_imports += collect_submodules('apps.document_converter')
 hidden_imports += collect_submodules('core')

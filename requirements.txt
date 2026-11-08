@@ -6,6 +6,12 @@ pdf2docx==0.5.13
 docx2pdf==0.1.8
 img2pdf
 pymupdf
+python-pptx
+pdfplumber
+pandas
+openpyxl
+python-docx
+Pillow
 
 # ── Windows Utilities ─────────────────────────────────────────────
 comtypes==1.4.16

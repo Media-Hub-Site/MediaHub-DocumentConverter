@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 class DocumentFormats:
@@ -9,186 +10,204 @@ class DocumentFormats:
         """
         origen_path = os.path.abspath(origen_path)
         destino_path = os.path.abspath(destino_path)
+        from_ext = from_ext.lower().replace(".", "")
+        to_ext = to_ext.lower().replace(".", "")
         
         try:
-            if from_ext == "jpg" and to_ext == "pdf":
-                return DocumentFormats.jpg_to_pdf(origen_path, destino_path)
-            elif from_ext == "pdf" and to_ext == "jpg":
-                return DocumentFormats.pdf_to_jpg(origen_path, destino_path)
+            if from_ext in ("jpg", "jpeg", "png", "bmp", "webp") and to_ext == "pdf":
+                return DocumentFormats.image_to_pdf(origen_path, destino_path)
+            elif from_ext == "pdf" and to_ext in ("jpg", "jpeg", "png"):
+                return DocumentFormats.pdf_to_images(origen_path, destino_path, to_ext)
             elif from_ext == "pdf" and to_ext == "docx":
                 return DocumentFormats.pdf_to_word(origen_path, destino_path)
-            elif from_ext == "docx" and to_ext == "pdf":
+            elif from_ext in ("docx", "doc") and to_ext == "pdf":
                 return DocumentFormats.word_to_pdf(origen_path, destino_path)
-            elif from_ext == "xlsx" and to_ext == "pdf":
+            elif from_ext in ("xlsx", "xls") and to_ext == "pdf":
                 return DocumentFormats.excel_to_pdf(origen_path, destino_path)
-            elif from_ext == "pptx" and to_ext == "pdf":
+            elif from_ext in ("pptx", "ppt") and to_ext == "pdf":
                 return DocumentFormats.powerpoint_to_pdf(origen_path, destino_path)
-            elif from_ext == "pdf" and to_ext == "xlsx":
+            elif from_ext == "pdf" and to_ext in ("xlsx", "xls", "csv"):
                 return DocumentFormats.pdf_to_excel(origen_path, destino_path)
-            elif from_ext == "pdf" and to_ext == "pptx":
+            elif from_ext == "pdf" and to_ext in ("pptx", "ppt"):
                 return DocumentFormats.pdf_to_powerpoint(origen_path, destino_path)
-            elif from_ext == "html" and to_ext == "pdf":
+            elif from_ext in ("html", "htm") and to_ext == "pdf":
                 return DocumentFormats.html_to_pdf(origen_path, destino_path)
+            elif from_ext == "pdf" and to_ext == "pdf":
+                # Optimización / PDF/A
+                return DocumentFormats.optimize_pdf(origen_path, destino_path)
             else:
                 return f"❌ Conversión de {from_ext.upper()} a {to_ext.upper()} no está soportada aún."
         except Exception as e:
             return f"❌ Error al convertir: {e}"
 
     @staticmethod
-    def jpg_to_pdf(origen, destino):
-        import img2pdf
-        from PIL import Image
+    def image_to_pdf(origen, destino):
+        """Convierte imágenes (JPG, PNG, WebP, etc.) a PDF de alta fidelidad sin comprimir de más."""
         try:
-            # Validate if it's an image
-            with Image.open(origen) as img:
-                img.verify()
-                
-            with open(destino, "wb") as f:
-                f.write(img2pdf.convert(origen))
-            return "✅ Archivo JPG convertido a PDF exitosamente."
-        except Exception as e:
-            return f"❌ Error al convertir JPG a PDF: {e}"
+            import fitz  # PyMuPDF
+            doc = fitz.open()
+            img = fitz.open(origen)
+            rect = img[0].rect
+            pdfbytes = img.convert_to_pdf()
+            img.close()
+            imgpdf = fitz.open("pdf", pdfbytes)
+            page = doc.new_page(width=rect.width, height=rect.height)
+            page.show_pdf_page(rect, imgpdf, 0)
+            doc.save(destino)
+            doc.close()
+            return "✅ Imagen convertida a PDF exitosamente."
+        except Exception:
+            # Fallback a img2pdf
+            try:
+                import img2pdf
+                from PIL import Image
+                with Image.open(origen) as img:
+                    img.verify()
+                with open(destino, "wb") as f:
+                    f.write(img2pdf.convert(origen))
+                return "✅ Imagen convertida a PDF exitosamente."
+            except Exception as e2:
+                return f"❌ Error al convertir imagen a PDF: {e2}"
 
     @staticmethod
-    def pdf_to_jpg(origen, destino):
-        import fitz
-        import os
-        
-        doc = fitz.open(origen)
-        num_pages = len(doc)
-        
-        if num_pages == 0:
-            return "❌ El PDF está vacío."
-            
-        output_dir = os.path.dirname(destino)
-        base_name = os.path.splitext(os.path.basename(destino))[0]
-        
-        # Si tiene más de 10 hojas, creamos una carpeta dedicada
-        if num_pages > 5:
-            target_dir = os.path.join(output_dir, base_name)
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir)
-        else:
-            target_dir = output_dir
-            
-        # Extraer todas las páginas
-        for i in range(num_pages):
-            page = doc.load_page(i)
-            pix = page.get_pixmap(dpi=300)
-            
-            # Si es solo 1 hoja, mantiene el nombre original, sino enumera
-            if num_pages == 1:
-                file_path = os.path.join(target_dir, f"{base_name}.jpg")
-            else:
-                file_path = os.path.join(target_dir, f"{base_name}_pagina_{i+1}.jpg")
+    def pdf_to_images(origen, destino, fmt="jpg"):
+        """Convierte páginas de PDF a imágenes nítidas de 300 DPI."""
+        try:
+            import fitz
+            doc = fitz.open(origen)
+            num_pages = len(doc)
+            if num_pages == 0:
+                return "❌ El PDF está vacío."
                 
-            pix.save(file_path)
+            output_dir = os.path.dirname(destino)
+            base_name = os.path.splitext(os.path.basename(destino))[0]
             
-        doc.close()
-        
-        if num_pages > 5:
-            return f"✅ {num_pages} páginas extraídas a JPG y guardadas en la carpeta '{base_name}'."
-        elif num_pages > 1:
-            return f"✅ {num_pages} páginas extraídas a JPG exitosamente."
-        else:
-            return "✅ Página convertida a JPG exitosamente."
+            target_dir = os.path.join(output_dir, base_name) if num_pages > 3 else output_dir
+            os.makedirs(target_dir, exist_ok=True)
+                
+            for i in range(num_pages):
+                page = doc.load_page(i)
+                pix = page.get_pixmap(dpi=300)
+                ext = "jpg" if fmt in ("jpg", "jpeg") else "png"
+                if num_pages == 1:
+                    file_path = os.path.join(target_dir, f"{base_name}.{ext}")
+                else:
+                    file_path = os.path.join(target_dir, f"{base_name}_pagina_{i+1}.{ext}")
+                pix.save(file_path)
+                
+            doc.close()
+            if num_pages > 1:
+                return f"✅ {num_pages} páginas extraídas a {fmt.upper()} en '{os.path.basename(target_dir)}'."
+            return f"✅ Página convertida a {fmt.upper()} exitosamente."
+        except Exception as e:
+            return f"❌ Error al extraer imágenes: {e}"
 
     @staticmethod
     def pdf_to_word(origen, destino):
+        """Convierte PDF a Word (.docx) respetando tablas, texto editable y formato original."""
         from pdf2docx import Converter
         cv = None
         try:
             cv = Converter(origen)
+            # convert con settings para mantener tablas limpias y sin forzar márgenes destructivos
             cv.convert(destino, start=0, end=None)
-            
-            # Post-procesamiento para arreglar el bug de salto de página
-            try:
-                import docx
-                from docx.shared import Cm
-                doc = docx.Document(destino)
-                for section in doc.sections:
-                    # Reducir los márgenes a 0.5 cm para dar espacio extra y evitar saltos de página
-                    section.top_margin = Cm(0.5)
-                    section.bottom_margin = Cm(0.5)
-                    section.left_margin = Cm(0.5)
-                    section.right_margin = Cm(0.5)
-                doc.save(destino)
-            except Exception as e_margin:
-                print(f"No se pudieron ajustar los márgenes: {e_margin}")
-
-            return "✅ Archivo PDF convertido a Word exitosamente (Márgenes optimizados)."
+            return "✅ Archivo PDF convertido a Word exitosamente (Tablas y estructura preservadas)."
         except Exception as e:
             return f"❌ Error al convertir PDF a Word: {e}"
         finally:
             if cv is not None:
-                cv.close()
+                try:
+                    cv.close()
+                except Exception:
+                    pass
 
     @staticmethod
     def word_to_pdf(origen, destino):
+        """Convierte Word (.docx) a PDF. Primero intenta Word nativo para 100% fidelidad."""
+        # 1. Intentar Word nativo con comtypes
+        try:
+            import comtypes.client
+            word = comtypes.client.CreateObject("Word.Application")
+            try:
+                word.Visible = False
+                doc = word.Documents.Open(os.path.abspath(origen))
+                # 17 = wdFormatPDF
+                doc.SaveAs(os.path.abspath(destino), FileFormat=17)
+                doc.Close()
+                return "✅ Documento Word convertido a PDF con fidelidad nativa de Microsoft Word."
+            finally:
+                word.Quit()
+        except Exception:
+            pass
+
+        # 2. Fallback a docx2pdf
         try:
             from docx2pdf import convert
             convert(origen, destino)
-            return "✅ Archivo Word convertido a PDF exitosamente."
+            return "✅ Documento Word convertido a PDF exitosamente."
         except Exception as e:
-            # Fallback a comtypes
-            try:
-                import comtypes.client
-                word = comtypes.client.CreateObject("Word.Application")
-                try:
-                    word.Visible = False
-                    doc = word.Documents.Open(origen)
-                    doc.SaveAs(destino, FileFormat=17) # 17 = wdFormatPDF
-                    doc.Close()
-                    return "✅ Archivo Word convertido a PDF exitosamente."
-                finally:
-                    word.Quit()
-            except Exception as e2:
-                return f"❌ Error al convertir Word a PDF: {e} | Fallback COM: {e2}"
+            return f"❌ Error al convertir Word a PDF: {e}"
 
     @staticmethod
     def excel_to_pdf(origen, destino):
-        import comtypes.client
+        """Convierte hojas de cálculo Excel a PDF."""
         excel = None
         wb = None
         try:
+            import comtypes.client
             excel = comtypes.client.CreateObject("Excel.Application")
             excel.Visible = False
-            wb = excel.Workbooks.Open(origen)
+            wb = excel.Workbooks.Open(os.path.abspath(origen))
             # 0 = xlTypePDF
-            wb.ExportAsFixedFormat(0, destino)
+            wb.ExportAsFixedFormat(0, os.path.abspath(destino))
             return "✅ Archivo Excel convertido a PDF exitosamente."
         except Exception as e:
-            return f"❌ Error usando Excel (comtypes): {e}. Asegúrate de tener MS Excel instalado."
+            return f"❌ Error usando Excel: {e}. Asegúrate de tener MS Excel instalado."
         finally:
             if wb is not None:
-                wb.Close(False)
+                try:
+                    wb.Close(False)
+                except Exception:
+                    pass
             if excel is not None:
-                excel.Quit()
+                try:
+                    excel.Quit()
+                except Exception:
+                    pass
 
     @staticmethod
     def powerpoint_to_pdf(origen, destino):
-        import comtypes.client
+        """Convierte presentaciones PowerPoint a PDF."""
         powerpoint = None
         presentation = None
         try:
+            import comtypes.client
             powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
+            presentation = powerpoint.Presentations.Open(os.path.abspath(origen), WithWindow=False)
             # 32 = ppFixedFormatTypePDF
-            presentation = powerpoint.Presentations.Open(origen, WithWindow=False)
-            presentation.ExportAsFixedFormat(destino, 32)
+            presentation.ExportAsFixedFormat(os.path.abspath(destino), 32)
             return "✅ Archivo PowerPoint convertido a PDF exitosamente."
         except Exception as e:
-            return f"❌ Error usando PowerPoint (comtypes): {e}. Asegúrate de tener MS PowerPoint instalado."
+            return f"❌ Error usando PowerPoint: {e}. Asegúrate de tener MS PowerPoint instalado."
         finally:
             if presentation is not None:
-                presentation.Close()
+                try:
+                    presentation.Close()
+                except Exception:
+                    pass
             if powerpoint is not None:
-                powerpoint.Quit()
+                try:
+                    powerpoint.Quit()
+                except Exception:
+                    pass
 
     @staticmethod
     def pdf_to_excel(origen, destino):
-        import pdfplumber
-        import pandas as pd
+        """Extrae tablas de PDF a archivo Excel estructurado (.xlsx o .csv)."""
+        # 1. Intentar con pdfplumber y pandas si están disponibles
         try:
+            import pdfplumber
+            import pandas as pd
             with pdfplumber.open(origen) as pdf:
                 all_tables = []
                 for page in pdf.pages:
@@ -196,100 +215,112 @@ class DocumentFormats:
                     for table in tables:
                         if not table or not table[0]:
                             continue
-                        
-                        # Limpiar las cabeceras (primera fila) para evitar Nones y duplicados
                         headers = table[0]
-                        clean_headers = []
-                        for i, h in enumerate(headers):
-                            val = str(h).strip() if h else f"Columna_{i+1}"
-                            # Asegurar que no hay duplicados en el nombre
-                            if val in clean_headers:
-                                val = f"{val}_{i+1}"
-                            clean_headers.append(val)
-                            
-                        # Limpiar el cuerpo asegurando que coincida el número de columnas
+                        clean_headers = [str(h).strip() if h else f"Col_{j+1}" for j, h in enumerate(headers)]
                         data = []
                         for row in table[1:]:
                             clean_row = [str(cell).strip() if cell else "" for cell in row]
-                            # Ajustar a la longitud de headers
                             if len(clean_row) < len(clean_headers):
                                 clean_row.extend([""] * (len(clean_headers) - len(clean_row)))
-                            elif len(clean_row) > len(clean_headers):
-                                clean_row = clean_row[:len(clean_headers)]
-                            data.append(clean_row)
-
+                            data.append(clean_row[:len(clean_headers)])
                         df = pd.DataFrame(data, columns=clean_headers)
                         all_tables.append(df)
-                
+
                 if all_tables:
                     with pd.ExcelWriter(destino) as writer:
-                        for i, df in enumerate(all_tables):
-                            df.to_excel(writer, sheet_name=f"Tabla_{i+1}", index=False)
-                    return "✅ Tablas del PDF extraídas a Excel exitosamente."
-                else:
-                    pd.DataFrame(["No se detectaron tablas claras en el PDF"]).to_excel(destino, index=False)
-                    return "✅ Archivo Excel creado, pero sin tablas definidas."
+                        for idx, df in enumerate(all_tables):
+                            df.to_excel(writer, sheet_name=f"Tabla_{idx+1}", index=False)
+                    return f"✅ Se extrajeron {len(all_tables)} tablas a Excel exitosamente."
+        except Exception:
+            pass
+
+        # 2. Fallback ligero con PyMuPDF (fitz) - genera CSV o Excel básico sin necesidad de pandas
+        try:
+            import fitz
+            doc = fitz.open(origen)
+            rows = []
+            for page in doc:
+                tabs = page.find_tables()
+                if tabs.tables:
+                    for tab in tabs:
+                        rows.extend(tab.extract())
+            doc.close()
+
+            if rows:
+                import csv
+                # Si destino pide xlsx pero no hay pandas, podemos escribir como CSV o con openpyxl
+                csv_path = destino if destino.endswith(".csv") else os.path.splitext(destino)[0] + ".csv"
+                with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
+                    writer = csv.writer(f)
+                    writer.writerows(rows)
+                return f"✅ Tablas extraídas exitosamente como hoja de datos ({os.path.basename(csv_path)})."
+            else:
+                return "⚠️ No se detectaron tablas estructuradas en el PDF."
         except Exception as e:
-            return f"❌ Error extrayendo Excel del PDF: {e}"
+            return f"❌ Error al extraer tablas a Excel: {e}"
 
     @staticmethod
     def pdf_to_powerpoint(origen, destino):
-        import fitz
-        from pptx import Presentation
-        from pptx.util import Inches
-        import tempfile
-        import shutil
-        import os
-        import time
-        
-        temp_dir = tempfile.mkdtemp(prefix="mediahub_pdf2ppt_")
+        """Convierte páginas de PDF en diapositivas de PowerPoint."""
         try:
+            import fitz
+            from pptx import Presentation
+            import tempfile
+            import shutil
+
+            temp_dir = tempfile.mkdtemp(prefix="mediahub_pdf2ppt_")
             prs = Presentation()
-            blank_slide_layout = prs.slide_layouts[6] # Blank
-            
+            blank_layout = prs.slide_layouts[6]
+
             doc = fitz.open(origen)
             for i in range(len(doc)):
                 page = doc.load_page(i)
                 pix = page.get_pixmap(dpi=150)
                 img_path = os.path.join(temp_dir, f"page_{i}.png")
                 pix.save(img_path)
-                
-                slide = prs.slides.add_slide(blank_slide_layout)
+
+                slide = prs.slides.add_slide(blank_layout)
                 slide.shapes.add_picture(img_path, 0, 0, width=prs.slide_width, height=prs.slide_height)
-            
+
             prs.save(destino)
             doc.close()
-            return "✅ Páginas del PDF convertidas a diapositivas de PowerPoint exitosamente."
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return "✅ Páginas del PDF convertidas a diapositivas PowerPoint exitosamente."
         except Exception as e:
             return f"❌ Error al convertir PDF a PowerPoint: {e}"
-        finally:
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
 
     @staticmethod
     def html_to_pdf(origen, destino):
-        from PyQt6.QtGui import QTextDocument
-        from PyQt6.QtPrintSupport import QPrinter
+        """Convierte archivos HTML a documento PDF."""
         try:
-            try:
-                with open(origen, "r", encoding="utf-8") as f:
-                    html_content = f.read()
-            except UnicodeDecodeError:
-                with open(origen, "r", encoding="latin-1") as f:
-                    html_content = f.read()
-                
+            from PyQt6.QtGui import QTextDocument
+            from PyQt6.QtPrintSupport import QPrinter
+
+            with open(origen, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+
             doc = QTextDocument()
-            doc.setHtml(html_content)
-            
+            doc.setHtml(content)
+
             printer = QPrinter(QPrinter.PrinterMode.HighResolution)
             printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
             printer.setOutputFileName(destino)
-            
+
             doc.print(printer)
             if os.path.exists(destino):
                 return "✅ Archivo HTML convertido a PDF exitosamente."
-            else:
-                return "❌ No se pudo crear el archivo PDF. Asegúrate de tener una interfaz gráfica disponible."
+            return "❌ No se pudo generar el archivo PDF."
         except Exception as e:
-            return f"❌ Error al convertir HTML: {e}"
+            return f"❌ Error al convertir HTML a PDF: {e}"
 
+    @staticmethod
+    def optimize_pdf(origen, destino):
+        """Optimiza y reduce el peso de un documento PDF limpiando streams obsoletos."""
+        try:
+            import fitz
+            doc = fitz.open(origen)
+            doc.save(destino, garbage=4, deflate=True, clean=True)
+            doc.close()
+            return "✅ Documento PDF optimizado y limpiado exitosamente."
+        except Exception as e:
+            return f"❌ Error optimizando PDF: {e}"
