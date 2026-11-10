@@ -77,7 +77,7 @@ class DocumentLauncherWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Document Converter & PDF Studio — Media Hub")
+        self.setWindowTitle(t("app_title"))
         self.resize(980, 700)
         self.setMinimumSize(880, 640)
         apply_window_theme(self)
@@ -121,7 +121,7 @@ class DocumentLauncherWindow(QWidget):
         header_row.addLayout(title_box)
         header_row.addStretch()
 
-        exit_btn = QPushButton("Salir")
+        exit_btn = QPushButton(t("btn_exit"))
         exit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         exit_btn.setFixedHeight(34)
         exit_btn.setStyleSheet(f"""
@@ -180,9 +180,9 @@ class DocumentLauncherWindow(QWidget):
         # Tab 3: Dividir PDF
         tab_split = self._create_split_tab()
 
-        self.tabs.addTab(tab_convert, "Conversor Universal")
-        self.tabs.addTab(tab_merge, "Unir PDFs (Merge)")
-        self.tabs.addTab(tab_split, "Dividir / Extraer (Split)")
+        self.tabs.addTab(tab_convert, t("tab_convert"))
+        self.tabs.addTab(tab_merge, t("tab_merge"))
+        self.tabs.addTab(tab_split, t("tab_split"))
 
         layout.addWidget(self.tabs)
         root.addWidget(card)
@@ -277,7 +277,7 @@ class DocumentLauncherWindow(QWidget):
 
         bottom_row = QHBoxLayout()
         bottom_row.addStretch()
-        self.btn_convert = QPushButton("Convertir Documento")
+        self.btn_convert = QPushButton(t("btn_convert"))
         self.btn_convert.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_convert.setFixedHeight(44)
         self.btn_convert.setFixedWidth(230)
@@ -377,7 +377,7 @@ class DocumentLauncherWindow(QWidget):
         # Botón Unir
         action_row = QHBoxLayout()
         action_row.addStretch()
-        btn_run_merge = QPushButton("Unir y Guardar PDF")
+        btn_run_merge = QPushButton(t("btn_merge_save"))
         btn_run_merge.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_run_merge.setFixedHeight(44)
         btn_run_merge.setFixedWidth(240)
@@ -480,7 +480,7 @@ class DocumentLauncherWindow(QWidget):
 
         action_row = QHBoxLayout()
         action_row.addStretch()
-        btn_run_split = QPushButton("Ejecutar División")
+        btn_run_split = QPushButton(t("btn_split_run"))
         btn_run_split.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_run_split.setFixedHeight(44)
         btn_run_split.setFixedWidth(230)
