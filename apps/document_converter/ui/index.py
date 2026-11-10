@@ -14,6 +14,7 @@ from apps.document_converter.ui.ui_theme import (
     make_card_container,
 )
 from apps.document_converter.i18n import t, get_current_language
+from core.sound_manager import SoundManager
 from apps.document_converter.converters.conversion import DocumentFormats
 from apps.document_converter.converters.pdf_toolkit import PDFToolkit
 
@@ -747,6 +748,7 @@ class DocumentLauncherWindow(QWidget):
         self.status_label.setText(msg)
 
     def _on_success(self, output_path, message):
+        SoundManager.instance().play("success")
         self.btn_convert.setEnabled(True)
         self.drop_zone.setEnabled(True)
         self.progress_bar.setVisible(False)
