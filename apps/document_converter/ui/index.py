@@ -13,6 +13,7 @@ from apps.document_converter.ui.ui_theme import (
     apply_window_theme,
     make_card_container,
 )
+from apps.document_converter.i18n import t, get_current_language
 from apps.document_converter.converters.conversion import DocumentFormats
 from apps.document_converter.converters.pdf_toolkit import PDFToolkit
 
