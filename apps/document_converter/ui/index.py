@@ -121,7 +121,7 @@ class DocumentLauncherWindow(QWidget):
         header_row.addLayout(title_box)
         header_row.addStretch()
 
-        exit_btn = QPushButton("🚪 Salir")
+        exit_btn = QPushButton("Salir")
         exit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         exit_btn.setFixedHeight(34)
         exit_btn.setStyleSheet(f"""
@@ -180,9 +180,9 @@ class DocumentLauncherWindow(QWidget):
         # Tab 3: Dividir PDF
         tab_split = self._create_split_tab()
 
-        self.tabs.addTab(tab_convert, "⚡ Conversor Universal")
-        self.tabs.addTab(tab_merge, "📑 Unir PDFs (Merge)")
-        self.tabs.addTab(tab_split, "✂️ Dividir / Extraer (Split)")
+        self.tabs.addTab(tab_convert, "Conversor Universal")
+        self.tabs.addTab(tab_merge, "Unir PDFs (Merge)")
+        self.tabs.addTab(tab_split, "Dividir / Extraer (Split)")
 
         layout.addWidget(self.tabs)
         root.addWidget(card)
@@ -212,7 +212,7 @@ class DocumentLauncherWindow(QWidget):
         drop_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         drop_layout.setSpacing(4)
 
-        self.drop_icon = QLabel("📄")
+        self.drop_icon = QLabel("")
         self.drop_icon.setStyleSheet("font-size: 28pt; background: transparent;")
         self.drop_title = QLabel("Arrastra tu documento aquí o haz clic para explorar")
         self.drop_title.setStyleSheet(f"color: {self._colors['text_main']}; font-size: 12.5pt; font-weight: 700; background: transparent;")
@@ -241,7 +241,7 @@ class DocumentLauncherWindow(QWidget):
         action_layout = QVBoxLayout(self.action_panel)
         action_layout.setSpacing(8)
 
-        self.lbl_detected = QLabel("💡 Selecciona o arrastra un archivo para ver los formatos disponibles")
+        self.lbl_detected = QLabel("Selecciona o arrastra un archivo para ver los formatos disponibles")
         self.lbl_detected.setStyleSheet(f"color: {self._colors['text_muted']}; font-weight: 700; font-size: 10pt;")
         action_layout.addWidget(self.lbl_detected)
 
@@ -277,7 +277,7 @@ class DocumentLauncherWindow(QWidget):
 
         bottom_row = QHBoxLayout()
         bottom_row.addStretch()
-        self.btn_convert = QPushButton("🚀 Convertir Documento")
+        self.btn_convert = QPushButton("Convertir Documento")
         self.btn_convert.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_convert.setFixedHeight(44)
         self.btn_convert.setFixedWidth(230)
@@ -341,7 +341,7 @@ class DocumentLauncherWindow(QWidget):
 
         # Botonera de control de lista
         btn_row = QHBoxLayout()
-        add_btn = QPushButton("➕ Agregar PDFs")
+        add_btn = QPushButton("Agregar PDFs")
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.setStyleSheet(self._btn_secondary_style())
         add_btn.clicked.connect(self._add_merge_files)
@@ -356,7 +356,7 @@ class DocumentLauncherWindow(QWidget):
         down_btn.setStyleSheet(self._btn_secondary_style())
         down_btn.clicked.connect(self._move_merge_item_down)
 
-        del_btn = QPushButton("🗑️ Eliminar")
+        del_btn = QPushButton("Eliminar")
         del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         del_btn.setStyleSheet(self._btn_secondary_style())
         del_btn.clicked.connect(self._remove_merge_item)
@@ -377,7 +377,7 @@ class DocumentLauncherWindow(QWidget):
         # Botón Unir
         action_row = QHBoxLayout()
         action_row.addStretch()
-        btn_run_merge = QPushButton("📑 Unir y Guardar PDF")
+        btn_run_merge = QPushButton("Unir y Guardar PDF")
         btn_run_merge.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_run_merge.setFixedHeight(44)
         btn_run_merge.setFixedWidth(240)
@@ -422,7 +422,7 @@ class DocumentLauncherWindow(QWidget):
             }}
         """)
         s_layout = QHBoxLayout(source_box)
-        self.split_source_lbl = QLabel("📄 Ningún archivo PDF seleccionado")
+        self.split_source_lbl = QLabel("Ningún archivo PDF seleccionado")
         self.split_source_lbl.setStyleSheet(f"color: {self._colors['text_main']}; font-weight: 600; font-size: 10pt;")
         s_layout.addWidget(self.split_source_lbl)
         s_layout.addStretch()
@@ -480,7 +480,7 @@ class DocumentLauncherWindow(QWidget):
 
         action_row = QHBoxLayout()
         action_row.addStretch()
-        btn_run_split = QPushButton("✂️ Ejecutar División")
+        btn_run_split = QPushButton("Ejecutar División")
         btn_run_split.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_run_split.setFixedHeight(44)
         btn_run_split.setFixedWidth(230)
@@ -529,7 +529,7 @@ class DocumentLauncherWindow(QWidget):
             self, "Seleccionar PDFs para unir", "", "Archivos PDF (*.pdf)"
         )
         for f in files:
-            item = QListWidgetItem(f"📄 {os.path.basename(f)}")
+            item = QListWidgetItem(os.path.basename(f))
             item.setData(Qt.ItemDataRole.UserRole, f)
             self.merge_list.addItem(item)
 
@@ -583,7 +583,7 @@ class DocumentLauncherWindow(QWidget):
         )
         if path:
             self.split_current_file = path
-            self.split_source_lbl.setText(f"📄 {os.path.basename(path)}")
+            self.split_source_lbl.setText(os.path.basename(path))
 
     def _execute_split(self):
         if not self.split_current_file or not os.path.exists(self.split_current_file):
@@ -618,7 +618,7 @@ class DocumentLauncherWindow(QWidget):
                 files = PDFToolkit.split_pdf_each_page(self.split_current_file, out_dir)
                 QMessageBox.information(
                     self, "División Exitosa",
-                    f"✅ Se dividió el documento en {len(files)} páginas individuales.\n\nCarpeta:\n{out_dir}"
+                    f"Se dividió el documento en {len(files)} páginas individuales.\n\nCarpeta:\n{out_dir}"
                 )
             except Exception as e:
                 QMessageBox.critical(self, "Error al dividir", str(e))
@@ -657,12 +657,12 @@ class DocumentLauncherWindow(QWidget):
 
         doc_type, icon_name, targets = info
 
-        self.drop_icon.setText("📑")
+        self.drop_icon.setText("")
         self.drop_title.setText(f"{name}")
         size_kb = os.path.getsize(file_path) / 1024
         self.drop_subtitle.setText(f"{doc_type} • {size_kb:.1f} KB")
 
-        self.lbl_detected.setText(f"🎯 Archivo detectado: {doc_type}. Elige el formato de salida:")
+        self.lbl_detected.setText(f"Archivo detectado: {doc_type}. Elige el formato de salida:")
 
         for btn in self.target_buttons.values():
             self.pills_layout.removeWidget(btn)
@@ -749,7 +749,7 @@ class DocumentLauncherWindow(QWidget):
         self.btn_convert.setEnabled(True)
         self.drop_zone.setEnabled(True)
         self.progress_bar.setVisible(False)
-        self.status_label.setText("✅ Conversión completada exitosamente")
+        self.status_label.setText("Conversión completada exitosamente")
         QMessageBox.information(
             self, "Conversión Completada",
             f"{message}\n\nGuardado en:\n{output_path}"
@@ -759,7 +759,7 @@ class DocumentLauncherWindow(QWidget):
         self.btn_convert.setEnabled(True)
         self.drop_zone.setEnabled(True)
         self.progress_bar.setVisible(False)
-        self.status_label.setText("❌ Error al convertir documento")
+        self.status_label.setText("Error al convertir documento")
         QMessageBox.critical(self, "Error en Conversión", f"No se pudo completar la operación:\n\n{err}")
 
 
